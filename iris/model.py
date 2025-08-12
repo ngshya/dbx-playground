@@ -5,6 +5,7 @@ from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 from datetime import datetime
+from pytz import timezone
 import mlflow
 import mlflow.sklearn
 
@@ -21,6 +22,7 @@ def hp_tune(
     scoring_function = accuracy_score,          # function(y_true, y_pred) -> float; higher is better
     maximize: bool = True,                       # maximize or minimize scoring_function
     logger: Optional[CustomLogger] = None,
+    base_experiment_path: str = "/Users/y@shuyi.it/mlflow_experiments"  # base path for MLflow experiment
 ) -> Dict[str, Any]:
     """
     Generic hyperparameter tuning for any sklearn model using training and validation data,
@@ -38,13 +40,10 @@ def hp_tune(
         scoring_function: Callable metric function; higher is better (e.g., accuracy_score).
         maximize: Whether to maximize (`True`) or minimize (`False`) the scoring function.
         logger: Optional CustomLogger instance for logging.
+        base_experiment_path: Base path for MLflow experiment naming.
 
     Returns:
-        Dict with keys:
-          - "best_params": Dict with best params found via tuning.
-          - "best_loss": Float validation loss of best run.
-          - "best_run_info": Dict with MLflow run details for best trial.
-          - "mlflow_runs": List of dicts with MLflow run details for all trials.
+        "best_run_info": Dict with MLflow run details for best trial.
     """
 
     if logger is None:
@@ -75,11 +74,14 @@ def hp_tune(
     # Set MLflow registry URI if needed (adjust as per your environment)
     mlflow.set_registry_uri("databricks-uc")
 
-    # Generate a timestamp string, e.g. "20250812_1950"
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Generate a timestamp string, e.g. "20250812_215000"
+    timestamp = datetime.now(timezone("Europe/Rome")).strftime("%Y%m%d_%H%M%S")
 
-    # Create experiment name incorporating the datetime
-    experiment_path = f"/Users/y@shuyi.it/mlflow_experiments/hp_experiments_{timestamp}"
+    # Use model_class.__name__ for a clean model name (string)
+    model_name = model_class.__name__.lower()
+
+    # Construct the full experiment path
+    experiment_path = f"{base_experiment_path}/iris_{model_name}_{timestamp}"
 
     # Set MLflow experiment with the timestamped name
     mlflow.set_experiment(experiment_path)
@@ -87,7 +89,6 @@ def hp_tune(
     mlflow_runs = []
 
     def objective(params):
-
         with mlflow.start_run(nested=True) as run:
             mlflow.log_params(params)
             model = model_class(**params)
@@ -137,4 +138,3 @@ def hp_tune(
             best_run_info = run_info
 
     return best_run_info
-

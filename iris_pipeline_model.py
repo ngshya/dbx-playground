@@ -18,7 +18,8 @@ def iris_pipeline_model(
     base_val_table_name: str = "table_iris_val",
     base_test_table_name: str = "table_iris_test",
     max_evals: int = 3,
-    logging_level: str = "INFO"
+    logging_level: str = "INFO", 
+    base_experiment_path: str = "/Users/y@shuyi.it/mlflow_experiments" 
 ) -> None:
     """
     Runs hyperparameter tuning for Random Forest and Logistic Regression on the iris dataset
@@ -33,6 +34,7 @@ def iris_pipeline_model(
         base_test_table_name: Base test table name prefix.
         max_evals: Number of hyperopt iterations for tuning.
         logging_level: Logger level (e.g., DEBUG, INFO).
+        base_experiment_path: mlflow experiments base folder
     """
 
     logger = CustomLogger(name="IrisPipelineModel", level=logging_level)
@@ -70,6 +72,7 @@ def iris_pipeline_model(
         scoring_function=accuracy_score,
         maximize=True,
         logger=logger,
+        base_experiment_path=base_experiment_path,
     )
     logger.info(f"Best RandomForest hyperparameters: {best_rf_results}")
 
@@ -87,6 +90,7 @@ def iris_pipeline_model(
         scoring_function=accuracy_score,
         maximize=True,
         logger=logger,
+        base_experiment_path=base_experiment_path,
     )
     logger.info(f"Best LogisticRegression hyperparameters: {best_lr_results}")
 
@@ -149,6 +153,7 @@ if __name__ == "__main__":
     parser.add_argument("--base_test_table_name", type=str, default="table_iris_test", help="Base test table name prefix")
     parser.add_argument("--max_evals", type=int, default=3, help="Max evaluations for hyperopt tuning")
     parser.add_argument("--logging_level", type=str, default="INFO", help="Logging level (DEBUG, INFO, etc.)")
+    parser.add_argument("--base_experiment_path", type=str, default="/Users/y@shuyi.it/mlflow_experiments", help="Base path for MLflow experiment names")
 
     args = parser.parse_args()
 
@@ -160,4 +165,5 @@ if __name__ == "__main__":
         base_test_table_name=args.base_test_table_name,
         max_evals=args.max_evals,
         logging_level=args.logging_level,
+        base_experiment_path=args.base_experiment_path
     )
